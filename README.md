@@ -67,6 +67,7 @@ tools/                  # asset-generation scripts (Python / Node)
 
 Because it uses ES Modules, it must be served over `http(s)` — opening `index.html`
 directly via `file://` will show a blank screen.
+https://felix-lius.github.io/Dual-2048/
 
 ```bash
 cd "minigame-Dual 2048"
@@ -130,7 +131,7 @@ Released under the [MIT License](LICENSE). Free to use, modify, and redistribute
 **技术**：Phaser 3.80.1（本地化于 `vendor/`，无 CDN）、原生 ES Modules（无构建工具）、
 Node 原生测试（`node --test`）。
 
-**本地运行**：用任意静态服务器打开（因 ES Module 限制，不能直接双击 `file://` 打开）：
+**本地运行**：用任意静态服务器打开（因 ES Module 限制，不能直接双击 `file://` 打开）：或点击https://felix-lius.github.io/Dual-2048/
 
 ```bash
 cd "minigame-Dual 2048"
