@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-gen_covers.py —— 生成《Simultwin》CrazyGames 上架封面（3 张）+ 预览视频首帧（2 张）
+gen_covers.py —— 生成《Simultwin》封面（3 张）+ 预览视频首帧（2 张）
 
 规格来源：design/rebrand/visual-identity.md §2.2（封面构图）/ §3（品牌处理）
 色值来源：src/theme.js（TILE_COLORS / BOARD_FRAME / BG_GRADIENT_* / TEXT_PRIMARY / 语义色）

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-gen_icon.py —— 生成《Simultwin》CrazyGames 上架图标 assets/icon-512.png
+gen_icon.py —— 生成《Simultwin》图标 assets/icon-512.png
 
 规范来源：design/rebrand/visual-identity.md §1.3（内嵌 SVG 线稿）与 §1.4（量产规则）
 色值来源：src/theme.js（TILE_COLORS / BOARD_FRAME / BG_GRADIENT_*）
@@ -136,7 +136,7 @@ def save(canvas, filename, rounded=False, keep_alpha=False):
     img = canvas.resize((SIZE, SIZE), Image.LANCZOS)
 
     if rounded:
-        # 自带 22% 圆角版本（备用，主文件不裁圆角，避免平台二次裁切出白边）
+        # 自带 22% 圆角版本（备用，主文件不裁圆角，避免二次裁切出白边）
         mask = Image.new("L", (SIZE * SS, SIZE * SS), 0)
         ImageDraw.Draw(mask).rounded_rectangle(
             [0, 0, SIZE * SS - 1, SIZE * SS - 1],
@@ -160,7 +160,7 @@ def main():
     print("生成 Simultwin 图标资产：")
 
     opaque = build(transparent_bg=False)
-    save(opaque, "icon-512.png")                      # 主文件（上架用）
+    save(opaque, "icon-512.png")                      # 主文件
     save(opaque, "icon-512-rounded.png", rounded=True)  # 自带圆角备用版
 
     alpha = build(transparent_bg=True)

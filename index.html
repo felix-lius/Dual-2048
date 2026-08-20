@@ -8,8 +8,8 @@
   <!--
     说明：本游戏是纯静态站点，无任何外部运行时依赖。
     - Phaser 3 引擎已本地化（vendor/phaser.min.js），不依赖 CDN；
-    - 可选的平台集成层（src/platform.js）仅在宿主页面注入了
-      window.__GAME_PLATFORM__ 时才生效，缺失时全部静默 no-op，游戏照常完整可玩。
+    - 可选的集成层（src/integration.js）仅在宿主页面注入了
+      window.__GAME_INTEGRATION__ 时才生效，缺失时全部静默 no-op，游戏照常完整可玩。
     因此把本文件（含相对路径引用的资源）直接作为站点根目录即可运行，无需构建。
   -->
 

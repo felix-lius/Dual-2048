@@ -13,7 +13,7 @@ import { Button, SegToggle, showToast } from './ui.js';
 import { InteractionManager } from './interaction.js';
 import { setupInput } from './input.js';
 import { Audio } from './audio.js';
-import { Platform } from './platform.js';
+import { Integration } from './integration.js';
 import { t, getLanguage, setLanguage } from './i18n.js';
 import { FONT_STACK, hexToStr, createBackgroundGradient, BG_GRADIENT_TOP,
          TEXT_PRIMARY, TEXT_SECONDARY, TEXT_LIGHT, TEXT_WHITE,
@@ -68,7 +68,7 @@ export function resolveCasualOutcome(boards, retired) {
   return { action: 'continue' };
 }
 
-// 方案 B（用户拍板 · release-checklist §4.2）：结算遮罩「看广告撤销5步」按钮的可见性 / 不可用判定。
+// 方案 B（用户拍板 · 交付清单 §4.2）：结算遮罩「看广告撤销5步」按钮的可见性 / 不可用判定。
 // 纯函数（无 Phaser 依赖，可 Node 单测），把「广告能不能投」的产品规则与场景渲染解耦。
 //
 // 激励视频（看广告得撤销）的可用性：若宿主未提供广告能力，requestAd 会立刻回调失败。
@@ -165,9 +165,9 @@ export class GameScene extends Phaser.Scene {
     // §6 决策默认：音乐 OFF、SFX ON、单一持久化静音开关。no-op-safe。
     Audio.init();
 
-    // 可选平台集成层：场景启动即初始化并上报 loading 开始（缺失平台对象时静默 no-op）
-    Platform.init();
-    Platform.loadingStart();
+    // 可选集成层：场景启动即初始化并上报 loading 开始（缺失集成对象时静默 no-op）
+    Integration.init();
+    Integration.loadingStart();
 
     this.buildHUD();
     this.buildHelpButton();   // 始终可见的 "?" 帮助按钮（重开教程覆盖层）
@@ -183,7 +183,7 @@ export class GameScene extends Phaser.Scene {
     });
 
     // §4.2 自动播放策略：任意 pointerdown（首次用户手势）解锁 AudioContext。no-op-safe。
-    // release-checklist §4.4（iOS）：AudioContext 被来电/切后台打断后，只有在**真实用户手势**里
+    // 交付清单 §4.4（iOS）：AudioContext 被来电/切后台打断后，只有在**真实用户手势**里
     // 调 resume() 才会恢复，visibilitychange 无效。故 pointerdown 与 pointerup 都补一次
     // （Phaser 的 pointerup 由原生 touchend 同步派发，仍处在手势上下文内）。
     if (this.input && typeof this.input.on === 'function') {
@@ -204,40 +204,40 @@ export class GameScene extends Phaser.Scene {
     this.scale.on('resize', this.layout, this);
 
     // 加载完成：首屏棋盘已渲染 -> 上报 loading 结束并标记“开始游玩”
-    Platform.loadingStop();
-    Platform.onGamePlay();
+    Integration.loadingStop();
+    Integration.onGamePlay();
 
     // 失焦 / 切后台 -> 暂停计时；回到前台 -> 恢复。
     // 适配器内部有 _paused 守卫，blur 与 visibilitychange 同时触发也不会双暂停。
-    this._platformHandlers = {};
+    this._integrationHandlers = {};
     if (typeof document !== 'undefined') {
-      this._platformHandlers.vis = () => {
-        if (document.hidden) { Platform.pause(); Audio.stopMusic(); }
+      this._integrationHandlers.vis = () => {
+        if (document.hidden) { Integration.pause(); Audio.stopMusic(); }
         else {
-          Platform.resume();
+          Integration.resume();
           Audio.resume(); // 桌面/安卓可直接恢复；iOS 需真实手势，由下方 touchend 兜底
           if (Audio.isMusicEnabled()) Audio.startMusic();
         }
       };
-      document.addEventListener('visibilitychange', this._platformHandlers.vis);
-      // release-checklist §4.4：iOS 从后台/来电返回后必须在 touchend 手势里 resume()。
+      document.addEventListener('visibilitychange', this._integrationHandlers.vis);
+      // 交付清单 §4.4：iOS 从后台/来电返回后必须在 touchend 手势里 resume()。
       // 文档级监听作为 Phaser pointerup 之外的兜底（画布未覆盖处的触摸同样能解锁）。
-      this._platformHandlers.touch = () => Audio.resume();
+      this._integrationHandlers.touch = () => Audio.resume();
       try {
-        document.addEventListener('touchend', this._platformHandlers.touch, { passive: true });
+        document.addEventListener('touchend', this._integrationHandlers.touch, { passive: true });
       } catch (e) {
-        document.addEventListener('touchend', this._platformHandlers.touch);
+        document.addEventListener('touchend', this._integrationHandlers.touch);
       }
     }
     if (typeof window !== 'undefined') {
-      this._platformHandlers.blur = () => { Platform.pause(); Audio.stopMusic(); };
-      this._platformHandlers.focus = () => { Platform.resume(); if (Audio.isMusicEnabled()) Audio.startMusic(); };
-      window.addEventListener('blur', this._platformHandlers.blur);
-      window.addEventListener('focus', this._platformHandlers.focus);
+      this._integrationHandlers.blur = () => { Integration.pause(); Audio.stopMusic(); };
+      this._integrationHandlers.focus = () => { Integration.resume(); if (Audio.isMusicEnabled()) Audio.startMusic(); };
+      window.addEventListener('blur', this._integrationHandlers.blur);
+      window.addEventListener('focus', this._integrationHandlers.focus);
     }
     // 场景销毁时移除监听，避免泄漏
     if (this.events && typeof this.events.on === 'function') {
-      this.events.once('shutdown', () => this._removePlatformHandlers());
+      this.events.once('shutdown', () => this._removeIntegrationHandlers());
     }
 
     // 首次运行（localStorage 未标记）自动弹出教程
@@ -245,8 +245,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   // 移除失焦/可见性监听（场景 shutdown 时调用）
-  _removePlatformHandlers() {
-    const h = this._platformHandlers;
+  _removeIntegrationHandlers() {
+    const h = this._integrationHandlers;
     if (!h) return;
     try {
       if (typeof document !== 'undefined') {
@@ -258,7 +258,7 @@ export class GameScene extends Phaser.Scene {
         if (h.focus) window.removeEventListener('focus', h.focus);
       }
     } catch (e) { /* 忽略 */ }
-    this._platformHandlers = null;
+    this._integrationHandlers = null;
   }
 
   // ---------------- HUD ----------------
@@ -936,7 +936,7 @@ export class GameScene extends Phaser.Scene {
 
     if (!anyMoved) { Audio.play('invalidMove'); return; } // 无效操作：不压栈、不生成
 
-    Platform.happyTime(); // 正向时刻（有效移动/合并），适配器内部节流到 ~3s 一次
+    Integration.happyTime(); // 正向时刻（有效移动/合并），适配器内部节流到 ~3s 一次
 
     // 有效移动：仅播放轻快"咻"滑动声；合并音按 ITER-V12-001 ① 已去除，避免干扰
     Audio.play('swipe');
@@ -1040,7 +1040,7 @@ export class GameScene extends Phaser.Scene {
     const snap = this.undo.undo();
     if (!snap) {
       if (this.undo.undoLeft <= 0) {
-        this._requestUndoViaAd(); // 看广告得撤销（无外部平台时静默解析 true，本地测试可继续）
+        this._requestUndoViaAd(); // 看广告得撤销（无外部集成时静默解析 true，本地测试可继续）
       } else {
         showToast(this, t('nothingToUndo'));
       }
@@ -1057,7 +1057,7 @@ export class GameScene extends Phaser.Scene {
   // 看广告得撤销：请求激励视频，看完 -> 发放临时撤销次数；不可用/关闭 -> 保持原状。
   _requestUndoViaAd() {
     showToast(this, t('undoWatchAd'));
-    Platform.requestRewardedAd().then((granted) => {
+    Integration.requestRewardedAd().then((granted) => {
       if (granted) {
         this.undo.grantTemp(this.undo.freeUses); // 奖励等于初始免费次数
         this.refreshHUD();
@@ -1069,11 +1069,11 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  // 方案 B 判定：广告请求失败且「从未开始播放」(lastAdStarted=false) -> 平台侧不可投放
-  // （Basic Launch / 拦截 / 无填充），置位后结算遮罩不再显示看广告按钮。
+  // 方案 B 判定：广告请求失败且「从未开始播放」(lastAdStarted=false) -> 集成侧不可投放
+  // （广告暂不可用 / 拦截 / 无填充），置位后结算遮罩不再显示看广告按钮。
   // 若广告已开始播放而玩家中途关闭，则属正常取消，不置位（下次仍可看）。
   _noteAdUnavailable() {
-    if (!isAdUnavailableSignal(false, Platform.lastAdStarted)) return false;
+    if (!isAdUnavailableSignal(false, Integration.lastAdStarted)) return false;
     this.adsUnavailable = true;
     return true;
   }
@@ -1083,7 +1083,7 @@ export class GameScene extends Phaser.Scene {
   onWatchAdUndo() {
     if (!this.gameOver) return; // 仅在失败遮罩期间有效
     showToast(this, t('rewindAdBtn'));
-    Platform.requestRewardedAd().then((granted) => {
+    Integration.requestRewardedAd().then((granted) => {
       if (!granted) {
         // 方案 B：广告根本没开始播 -> 提示「广告暂未开放」并隐藏入口；
         // 已开始播但玩家中途关闭 -> 维持原「未看完，未回退」提示，按钮保留。
@@ -1196,7 +1196,7 @@ export class GameScene extends Phaser.Scene {
     this.busy = false;
     this.pendingDir = null;
     this.hasMoved = false; // 重开后允许难度直切（首次有效移动前）
-    // 注意：adsUnavailable 刻意**不**在重开时复位 —— 它是「本次会话平台侧广告不可投放」的事实，
+    // 注意：adsUnavailable 刻意**不**在重开时复位 —— 它是「本次会话集成侧广告不可投放」的事实，
     // 一局一复位会让玩家每局都白点一次那颗按钮，与方案 B「隐藏入口」的目的相悖。
     this.hideOverlay();
     this.refreshHUD();

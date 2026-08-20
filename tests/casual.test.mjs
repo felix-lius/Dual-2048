@@ -118,8 +118,8 @@ function mockBoard({ moves = true, score = 0, max = 0 } = {}) {
   assert(r.action === 'lose', 'casual function does not implement hardcore branch');
 }
 
-// ---------- 方案 B：Basic Launch 广告不可用时隐藏「看广告撤销5步」入口 ----------
-// （release-checklist §4.2 用户拍板方案 B；纯函数决策，与 Phaser 渲染解耦）
+// ---------- 方案 B：广告不可用时隐藏「看广告撤销5步」入口 ----------
+// （交付清单 §4.2 用户拍板方案 B；纯函数决策，与 Phaser 渲染解耦）
 {
   // 显示规则：仅失败窗口显示，且本会话未探测到广告不可投放
   assert(shouldShowRewardAdButton(false, false) === true, 'lose + ads OK => show reward ad button');
@@ -131,7 +131,7 @@ function mockBoard({ moves = true, score = 0, max = 0 } = {}) {
   assert(isAdUnavailableSignal(false, false) === true, 'adError before adStarted => ads unavailable');
   assert(isAdUnavailableSignal(false, true) === false, 'ad started then closed => user cancel, not unavailable');
   assert(isAdUnavailableSignal(true, true) === false, 'ad finished => not unavailable');
-  assert(isAdUnavailableSignal(true, false) === false, 'granted without start (no-SDK local fallback) => not unavailable');
+  assert(isAdUnavailableSignal(true, false) === false, 'granted without start (no-api local fallback) => not unavailable');
 }
 
 // ---------- summary ----------

@@ -1,8 +1,8 @@
-// main.js —— 启动入口：Phaser 配置 + 全局错误覆盖层 + 可选平台集成初始化
+// main.js —— 启动入口：Phaser 配置 + 全局错误覆盖层 + 可选集成初始化
 // ITER-V6-REDO-001 ③：去首页 —— 只保留 GameScene 直接启动（默认硬核，游戏内可切模式/语言）
 import './storage-migrate.js'; // RN-3：dual2048.* → simultwin.* 一次性迁移，须在读取 localStorage 的模块前执行
 import { GameScene } from './game.js';
-import { Platform } from './platform.js';
+import { Integration } from './integration.js';
 import { initI18n, bindGame } from './i18n.js';
 import { BG_GRADIENT_TOP, hexToStr } from './theme.js';
 
@@ -27,7 +27,7 @@ function showErrorBanner(info) {
 window.addEventListener('error', (e) => showErrorBanner(e));
 window.addEventListener('unhandledrejection', (e) => showErrorBanner((e && e.reason) || 'unhandledrejection'));
 
-Platform.init();
+Integration.init();
 
 // 读取持久化语言（默认英文），确保在场景 create 前就位
 initI18n();

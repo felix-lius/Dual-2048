@@ -84,7 +84,7 @@ export class AudioManager {
   }
 
   // 首次用户手势时调用，解锁被挂起的 AudioContext（自动播放策略）。
-  // release-checklist §4.4（iOS）：来电/切后台会把 ctx 打断，state 可能是非标准的 'interrupted'，
+  // 交付清单 §4.4（iOS）：来电/切后台会把 ctx 打断，state 可能是非标准的 'interrupted'，
   // 回前台后变 'suspended'；两种情况都必须在**真实用户手势**（touchend/pointerup）里 resume()。
   // 因此判定放宽为「只要不是 running 就尝试恢复」，并吞掉 resume() 返回的 rejected Promise
   // （非手势上下文调用时 iOS 会 reject，不能让它冒泡成 unhandledrejection 触发错误横幅）。

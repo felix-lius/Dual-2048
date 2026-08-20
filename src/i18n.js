@@ -81,7 +81,7 @@ export const strings = {
     rewindAdBtn: 'Watch ad: undo 5 steps, continue',
     rewoundSteps: 'Rewound {0} steps — keep playing!',
     rewindAdCancelled: 'Ad not completed — no rewind',
-    // 方案 B：Basic Launch 阶段平台禁投广告，探测到不可用后提示并隐藏入口
+    // 方案 B：广告暂不可用时，探测到不可用后提示并隐藏入口
     adUnavailable: 'Ads not available yet',
   },
   zh: {
@@ -160,7 +160,7 @@ export const strings = {
     rewindAdBtn: '看广告：撤销 5 步，继续游戏',
     rewoundSteps: '已回退 {0} 步，继续游戏！',
     rewindAdCancelled: '广告未看完，未回退',
-    // 方案 B：Basic Launch 阶段平台禁投广告，探测到不可用后提示并隐藏入口
+    // 方案 B：广告暂不可用时，探测到不可用后提示并隐藏入口
     adUnavailable: '广告暂未开放',
   },
 };

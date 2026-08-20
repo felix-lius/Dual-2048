@@ -49,7 +49,6 @@ services.
 | Language | Vanilla ES Modules (no bundler, no TypeScript) |
 | Audio | WebAudio real-time synthesis |
 | Tests | Node's native `node --test` runner |
-| Hosting | Any static file host / GitHub Pages |
 
 ## Project Structure
 
@@ -58,7 +57,7 @@ index.html              # entry point; uses relative paths only, runs from repo 
 src/                    # 13 game modules (game, board, view, ui, audio, i18n, platform, …)
 vendor/phaser.min.js    # localized Phaser engine
 tests/                  # 9 test suites, ~489 assertions, zero dependencies
-docs/                   # engineering & release notes
+docs/                   # engineering notes
 design/                 # GDD, art bible, audio bible, style reference
 assets/                 # covers, icons, gameplay screenshots
 tools/                  # asset-generation scripts (Python / Node)
@@ -77,22 +76,6 @@ python -m http.server 8000
 
 (Any static server works — e.g. `npx serve .`.)
 
-## Play Online
-
-The game is a pure static site, so it can be hosted anywhere with no build step.
-
-1. **GitHub Pages (recommended, permanent).** Enable Pages on the `main` branch using the
-   repository root (`/`) as the source — see
-   [docs/build-notes.md §2](docs/build-notes.md) for the full walkthrough. Once enabled it
-   goes live at `https://<your-username>.github.io/<repository>/`.
-2. **CloudStudio / any static host.** Deploy the folder as a static site; the entry
-   `index.html` references everything by relative path, so no path tweaks are needed.
-
-**▶ Try it now (live demo):** https://e4222e853271489fa27804d0dba1822c.app.workbuddy.link
-
-> The link above is a ready-to-play live demo. The GitHub Pages URL (once enabled) is the
-> permanent home for the game.
-
 ## Development & Testing
 
 ```bash
@@ -102,10 +85,8 @@ node --test tests/
 
 ## Documentation
 
-- [Engineering & build notes](docs/build-notes.md) — architecture, what is (and isn't)
-  committed, and the GitHub Pages deployment guide.
-- [Visual asset spec](docs/icon-spec.md) — cover & icon specifications.
-- [Screenshot shoot list](docs/screenshot-list.md) — gameplay capture checklist.
+- [Engineering & build notes](docs/build-notes.md) — architecture, version-control
+  exclusions, and local-run / test instructions.
 - [GDD v1.0](design/gdd/dual-2048-gdd.md) · [GDD v1.1](design/gdd/dual-2048-gdd-v1.1.md)
   — game design documents.
 - [Art bible](design/art/art-bible.md) · [Audio bible](design/audio/audio-bible.md) ·
@@ -121,15 +102,14 @@ node --test tests/
 
 - **No accounts / leaderboard.** Progress is stored in the device's `localStorage` only.
 - **Rewarded-ad continuation is a stub.** The "watch ad for +5 undos" path is a no-op
-  unless an optional host integration is wired in (see below).
+  unless an optional integration is wired in (see below).
 - **Code-drawn visuals.** Tiles and UI are drawn with Phaser graphics rather than sprite art.
 
-## Optional host integration
+## Optional integration adapter
 
-The game is fully playable with no external services. If you embed it on a portal that
-wants ad-lifecycle or load/visibility events, `src/platform.js` reads a global
-`window.__GAME_PLATFORM__` when present and otherwise stays a silent no-op — no code
-changes required to self-host.
+The codebase includes an optional integration adapter (`src/integration.js`) that stays
+inactive by default — it performs no actions unless explicitly activated, so the game is
+fully self-contained as shipped.
 
 ## License
 
@@ -156,11 +136,5 @@ Node 原生测试（`node --test`）。
 cd "minigame-Dual 2048"
 python -m http.server 8000   # 浏览器访问 http://localhost:8000/
 ```
-
-**在线试玩**：纯静态站点，可托管于任意静态空间。推荐开启 GitHub Pages（对 `main` 分支、
-根目录 `/` 发布，详见 [docs/build-notes.md §2](docs/build-notes.md)），上线后地址为
-`https://<用户名>.github.io/<仓库名>/`。
-
-**▶ 立即试玩（在线 Demo）**：https://e4222e853271489fa27804d0dba1822c.app.workbuddy.link
 
 **许可证**：[MIT](LICENSE)。

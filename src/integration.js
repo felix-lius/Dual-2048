@@ -1,9 +1,9 @@
-// platform.js —— 可选的平台集成适配层（带环境守卫，缺平台时静默 no-op）
+// integration.js —— 可选集成适配层（带环境守卫，缺集成对象时静默 no-op）
 // ─────────────────────────────────────────────────────────────────────────────
-// 这是一个**可选**的集成接缝：游戏本身零依赖、纯静态，不依赖任何外部平台。
-// 若宿主页面在全局注入了 `window.__GAME_PLATFORM__ = { SDK: <instance> }`，
+// 这是一个**可选**的集成接缝：游戏本身零依赖、纯静态，不依赖任何外部集成。
+// 若宿主页面在全局注入了 `window.__GAME_INTEGRATION__ = { api: <instance> }`，
 // 本适配层会抓取该实例并就绪后上报加载/生命周期事件、处理激励视频请求。
-// 若没有任何平台对象（本地开发、自托管、GitHub Pages 等），所有方法一律静默 no-op，
+// 若没有任何集成对象（本地开发、直接打开等），所有方法一律静默 no-op，
 // 绝不抛错，游戏照常完整可玩。
 //
 // 公开方法（被 game.js / main.js 调用）：
@@ -15,10 +15,10 @@
 // audio.js 不反向 import 本文件，无循环依赖；Node 单测下 Audio 为 ctx=null 的 no-op 单例，安全。
 import { Audio } from './audio.js';
 
-export class PlatformAdapter {
+export class IntegrationAdapter {
   constructor() {
-    this.sdk = null;
-    this._ready = false;        // SDK.init() 是否已完成（无 init 方法的桩视为立即就绪）
+    this.api = null;
+    this._ready = false;        // api.init() 是否已完成（无 init 方法的桩视为立即就绪）
     this._readyPromise = null;  // 记忆化的就绪 Promise（同时充当事件排队队列）
     this._gamePlayed = false;   // onGamePlay 仅首次生效
     this._lastHappy = 0;        // happyTime 节流时间戳
@@ -30,33 +30,33 @@ export class PlatformAdapter {
     this.lastAdError = null;
   }
 
-  // 抓取平台 SDK 实例；缺失则 sdk=null（后续所有方法静默 no-op）。可重复调用（幂等补抓）。
+  // 抓取 api 实例；缺失则 api=null（后续所有方法静默 no-op）。可重复调用（幂等补抓）。
   init() {
     try {
       if (typeof window !== 'undefined') {
-        const plat = window.__GAME_PLATFORM__;
-        if (plat && plat.SDK) {
-          this.sdk = (typeof plat.SDK.getInstance === 'function') ? plat.SDK.getInstance() : plat.SDK;
+        const plat = window.__GAME_INTEGRATION__;
+        if (plat && plat.api) {
+          this.api = (typeof plat.api.getInstance === 'function') ? plat.api.getInstance() : plat.api;
         }
       }
     } catch (e) {
-      this.sdk = null;
+      this.api = null;
     }
-    if (this.sdk) this.ready(); // 立即触发一次 SDK.init()（不阻塞调用方）
-    return this.sdk != null;
+    if (this.api) this.ready(); // 立即触发一次 api.init()（不阻塞调用方）
+    return this.api != null;
   }
 
-  // 记忆化就绪：resolve(true) 表示 SDK 可用，resolve(false) 表示无 SDK 或 init 失败。永不 reject。
+  // 记忆化就绪：resolve(true) 表示 api 可用，resolve(false) 表示无 api 或 init 失败。永不 reject。
   ready() {
     if (this._readyPromise) return this._readyPromise;
-    if (!this.sdk) {
+    if (!this.api) {
       this._readyPromise = Promise.resolve(false);
       return this._readyPromise;
     }
     let p;
     try {
-      if (typeof this.sdk.init === 'function') {
-        p = Promise.resolve(this.sdk.init());
+      if (typeof this.api.init === 'function') {
+        p = Promise.resolve(this.api.init());
       } else {
         this._ready = true; // 旧版 / 测试桩：无 init，视为就绪（同步，保持调用链同步语义）
         p = Promise.resolve();
@@ -70,10 +70,10 @@ export class PlatformAdapter {
     return this._readyPromise;
   }
 
-  // 统一 game.* 调用出口：就绪则同步调用；未就绪则排队到 SDK.init() 完成后按原序补发。
+  // 统一 game.* 调用出口：就绪则同步调用；未就绪则排队到 api.init() 完成后按原序补发。
   _game(fn) {
     try {
-      if (!this.sdk) return;
+      if (!this.api) return;
       const p = this.ready();
       if (this._ready) { this._invokeGame(fn); return; }
       p.then((ok) => { if (ok) this._invokeGame(fn); });
@@ -82,7 +82,7 @@ export class PlatformAdapter {
 
   _invokeGame(fn) {
     try {
-      const g = this.sdk && this.sdk.game; // 未就绪时访问可能抛错 -> 被捕获
+      const g = this.api && this.api.game; // 未就绪时访问可能抛错 -> 被捕获
       if (g) fn(g);
     } catch (e) { /* 静默 */ }
   }
@@ -133,18 +133,18 @@ export class PlatformAdapter {
     return this._requestAd('rewarded');
   }
 
-  // 中场广告：看完 -> true；不可用 / 关闭 -> false（无 SDK 时解析为 false）
+  // 中场广告：看完 -> true；不可用 / 关闭 -> false（无 api 时解析为 false）
   requestMidgameAd() {
     return this._requestAd('midgame');
   }
 
   // 统一广告请求（永不 reject，永不同步抛错）：
-  //   · 完全无平台（本地/离线开发）  -> rewarded 解析 true（可继续测试）、midgame 解析 false；
-  //   · 有平台但 init 失败           -> 一律 false（绝不白送奖励）；
-  //   · 有平台且就绪                -> 回调式请求，adFinished=true / adError=false。
+  //   · 完全无集成（本地/离线开发）  -> rewarded 解析 true（可继续测试）、midgame 解析 false；
+  //   · 有集成但 init 失败           -> 一律 false（绝不白送奖励）；
+  //   · 有集成且就绪                -> 回调式请求，adFinished=true / adError=false。
   _requestAd(type) {
     try {
-      if (!this.sdk) return Promise.resolve(type === 'rewarded');
+      if (!this.api) return Promise.resolve(type === 'rewarded');
       if (this._ready) return this._doRequestAd(type);
       return this.ready().then((ok) => (ok ? this._doRequestAd(type) : false));
     } catch (e) {
@@ -159,7 +159,7 @@ export class PlatformAdapter {
       const done = (v) => { if (!settled) { settled = true; resolve(v); } };
       this.lastAdStarted = false;
       try {
-        const ad = this.sdk && this.sdk.ad; // 属性访问本身可能抛错 -> 被下方 catch 兜住
+        const ad = this.api && this.api.ad; // 属性访问本身可能抛错 -> 被下方 catch 兜住
         if (!ad || typeof ad.requestAd !== 'function') { done(false); return; }
         ad.requestAd(type, {
           // 广告开始播放：立即静音（video-ads 合规硬性要求）
@@ -192,5 +192,5 @@ export class PlatformAdapter {
   }
 }
 
-// 全局单例：game.js / main.js 均 import { Platform } 直接使用
-export const Platform = new PlatformAdapter();
+// 全局单例：game.js / main.js 均 import { Integration } 直接使用
+export const Integration = new IntegrationAdapter();

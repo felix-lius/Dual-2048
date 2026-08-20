@@ -8,7 +8,7 @@
 | 作者 / 角色 | 阮和鸣（audio-director：音频方向 / 音效设计 / 实现策略 / 配音方向） |
 | 关联文档 | `design/gdd/dual-2048-gdd.md` v1.0（GDD v1.1 当前不存在，本版以其 v1.0 为准）；`design/art/art-bible.md` v1.0（视觉身份） |
 | 受众 | 团队（含程基岩落地）+ 用户评审；用户无技术背景，术语均给通俗解释 |
-| 硬约束 | **零外部音频文件、可离线部署**；沙箱无外网，游戏包自包含 |
+| 硬约束 | **零外部音频文件、可离线运行**；沙箱无外网，游戏包自包含 |
 
 ---
 
@@ -82,7 +82,7 @@
 | 13 | `difficultySwitch` | `ui.js SegToggle`（modeToggle）`onChange` 切换硬核/休闲 | **双音切换（上/下对）** | must | 快速两音（如 600→500Hz）各 60ms；明确「模式变了」 |
 | 14 | `languageSwitch` | `ui.js SegToggle`（langToggle）`onChange` 切换中/EN | **单/双音轻 blip**，与难度不同音高 | must | 用区别于 `difficultySwitch` 的音高（如 700Hz 软单音或反向对）；避免两切换听感雷同 |
 | 15 | `tutorialOpen` | 「怎么玩」覆盖层打开（GDD §7，原型未实现） | **友好「噗开」**（上行两音 + 空气感） | optional* | *原型无教程，列为未来事件；若上「怎么玩」必须配，待阶段 1 实现 |
-| 16 | `adStart` | `src/platform.js requestAd('rewarded')` 真实接入时（当前为桩） | **柔和「进场」cue**（暖低音 / whoosh in） | must* | *真实广告接回阶段（阶段 2）再做；提示「广告开始」，并把 BGM duck |
+| 16 | `adStart` | `src/integration.js requestAd('rewarded')` 真实接入时（当前为桩） | **柔和「进场」cue**（暖低音 / whoosh in） | must* | *真实广告接回阶段（阶段 2）再做；提示「广告开始」，并把 BGM duck |
 | 17 | `adEnd` | 广告完成/关闭回调（阶段 2） | **柔和「退场」cue**（whoosh out / 回位音） | must* | *同上；恢复 BGM 音量 |
 | 18 | `newBest` | `game.js endGame()` 破纪录 `newBest` + `_flashBestBadge()` | **明亮单铃 ding**（庆祝） | optional | 可并入 `win` 或在结算时追加一记清亮铃；区分于普通计分 |
 
@@ -111,9 +111,9 @@
 > **强烈建议：所有音频（SFX + 音乐）用 Web Audio API 在运行时程序化合成（振荡器 oscillator + 增益包络 envelope + 滤波噪声 filtered noise / 延迟 delay），游戏不引用任何 `.mp3/.ogg/.wav` 文件。**
 
 **理由（rationale）：**
-1. **零外部音频文件** —— 包体不含任何音频资源，符合「无外网依赖 + 平台自包含离线运行」硬约束（GDD §10.1/§10.5）；沙箱无外网也能跑。
-2. **无资产托管 / 无授权风险** —— 不依赖任何第三方音频素材/字体/采样，**天然规避版权与托管问题**；所有声音为代码生成，可商用、无许可费。
-3. **极小体积、极快加载** —— 音频不占下载/解包时间，过审与加载更顺畅。
+1. **零外部音频文件** —— 包体不含任何音频资源，符合「无外网依赖 + 自包含离线运行」硬约束（GDD §10.1/§10.5）；沙箱无外网也能跑。
+2. **无外部资产依赖 / 无授权风险** —— 不依赖任何第三方音频素材/字体/采样，**天然规避版权与分发问题**；所有声音为代码生成，可商用、无许可费。
+3. **极小体积、极快加载** —— 音频不占下载/解包时间，加载更顺畅。
 4. **动态可调** —— 音高/时长/混响全参数化，便于按数值档位（`merge` tier）实时变化，也便于无障碍（减少/静音）即时生效。
 5. **一致性强** —— 音色由同一套合成器生成，全游戏听觉统一，对齐 Art Bible 的「统一视觉身份」。
 
@@ -142,11 +142,11 @@ Master Gain (dual2048.muted → 0)
 | 铃/琶音（win/lose/retire） | `Oscillator(triangle/sine)` 序列 → `Gain`(每音 env) → `Delay`(空间) → SFXGain | 每音 60–120ms |
 
 ### 3.4 备选：真实录制 SFX 资产规格（若用户后续想要采样音）
-> 仅当程序化音色不满意、改走素材路线时使用。**仍需随包本地化（无外网）**，并自行承担授权/托管。
+> 仅当程序化音色不满意、改走素材路线时使用。**仍需随包本地化（无外网）**，并自行承担授权与分发。
 
 | 规格项 | 要求 |
 | --- | --- |
-| 格式 | **`.ogg` + `.mp3` 双份**（兼容 Safari/Chrome；内嵌 iframe 两端） |
+| 格式 | **`.ogg` + `.mp3` 双份**（兼容 Safari/Chrome；内嵌网页两端） |
 | 单文件时长 | **0.1–0.4s**（短促反馈音） |
 | 总体积 | **< 200KB**（全部 SFX 合计） |
 | 采样率 | 44.1kHz / 16-bit 足够 |
@@ -163,11 +163,11 @@ Master Gain (dual2048.muted → 0)
 - **推荐默认值**：`dual2048.muted = false`（默认不静音，但见下「音乐默认关」）。
 - **建议拆分（可选，待拍板）**：另设 `dual2048.musicOn`（boolean，默认 **false**），让音乐与 SFX 独立开关——SFX 默认开、音乐默认关，更友好。
 
-### 4.2 平台自动播放策略（Autoplay Policy）★
-- 浏览器 / 内嵌 iframe **禁止无手势自动出声**。因此：
+### 4.2 自动播放策略（Autoplay Policy）★
+- 浏览器 / 内嵌网页 **禁止无手势自动出声**。因此：
   - `AudioContext` 在加载时**创建但保持 suspended**；
   - 必须在**首次用户手势**（第一次 `pointerdown` / `keydown`，即第一次滑动或点击）时调用 `audioCtx.resume()`，之后再出声。
-- **音乐默认行为（主推）**：游戏启动后音乐**默认不自动播放**（或仅以极低音量 ~0.28 在首次手势后渐入，且提供明显开关）。平台休闲玩家偏好安静思考，音乐「默认关、用户开」最稳妥；若用户希望默认开，再翻为 `musicOn=true`。
+- **音乐默认行为（主推）**：游戏启动后音乐**默认不自动播放**（或仅以极低音量 ~0.28 在首次手势后渐入，且提供明显开关）。环境休闲玩家偏好安静思考，音乐「默认关、用户开」最稳妥；若用户希望默认开，再翻为 `musicOn=true`。
 - **SFX 默认开**（首次手势后即可响），配合 `buttonTap` 等即时反馈。
 
 ### 4.3 可见的静音控制
@@ -198,7 +198,7 @@ Master Gain (dual2048.muted → 0)
 | `SegToggle` modeToggle `onChange` | `difficultySwitch` |
 | `SegToggle` langToggle `onChange` | `languageSwitch` |
 | 「怎么玩」覆盖层打开（阶段 1） | `tutorialOpen` |
-| `platform.js requestAd('rewarded')` 真实接回 | `adStart` / `adEnd`（广告起止回调） |
+| `integration.js requestAd('rewarded')` 真实接回 | `adStart` / `adEnd`（广告起止回调） |
 | `endGame()` 破纪录 | `newBest` |
 
 > **关键缺口提示**：当前 `board.js move()` 仅返回 `{moved, scoreGained}`，**不直接暴露「哪些方块合并、合并后值是多少」**。要驱动 §2.1 的 `merge` 分档，建议：
@@ -226,7 +226,7 @@ duckMusic(level)                        // adStart 时压低，adEnd 恢复（�
 - **撤销**：`onUndoClick`。
 - **冻结激活 / 读秒**：`handleTap`（applyTo）+ `handleMove`（tick）。
 - **按钮 / 切换**：`ui.js` 的 `Button.onClick`、`SegToggle.onChange`。
-- **广告**：`platform.js requestAd`（阶段 2 接 `adStart`/`adEnd`）。
+- **广告**：`integration.js requestAd`（阶段 2 接 `adStart`/`adEnd`）。
 
 ---
 
@@ -234,7 +234,7 @@ duckMusic(level)                        // adStart 时压低，adEnd 恢复（�
 
 | # | 决策点 | 我的建议 | 影响 |
 | --- | --- | --- | --- |
-| 1 | 音乐默认开还是关（`dual2048.musicOn` 默认值） | **默认关，用户手动开**（最贴合 平台安静思考 + 自动播放策略） | 首因体验 |
+| 1 | 音乐默认开还是关（`dual2048.musicOn` 默认值） | **默认关，用户手动开**（最贴合 安静思考 + 自动播放策略） | 首因体验 |
 | 2 | 是否拆分 SFX / 音乐独立开关 | **建议拆分**（SFX 默认开、音乐默认关） | 无障碍/体验 |
 | 3 | 是否补 `tileSpawn` / `invalidMove` / `freezeTick` 等 optional 事件 | **首版做 `tileSpawn` 轻版；`invalidMove`、`freezeTick` 做得很轻或默认关** | 听感 clutter |
 | 4 | 音乐走程序化生成还是预留采样位 | **程序化（零文件）**；若不满意再走 §3.4 采样 | 体积/授权 |

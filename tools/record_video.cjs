@@ -1,11 +1,11 @@
-// 用 Playwright 录制《Double 2048》预览视频（横屏 + 竖屏各一段）。
+// 用 Playwright 录制《Simultwin》预览视频（横屏 + 竖屏各一段）。
 // 依赖：npm install playwright && npx playwright install chromium（已在后台运行）
 // 运行：NODE_PATH=<workspace>/node_modules node tools/record_video.cjs
-// 输出：videos/landscape.webm / videos/portrait.webm（CrazyGames 接受 webm/mp4）
+// 输出：videos/landscape.webm / videos/portrait.webm（兼容 webm/mp4）
 
 const { chromium } = require('playwright');
 
-const URL = 'https://4a2fc2da8ad94ea8859206d0d8f030ae.bj9.agentos-app.net';
+const URL = 'http://localhost:3000';
 const DIRS = ['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown'];
 const STEP_MS = 380;          // 每步间隔
 const STEPS = 45;             // 约 17s（45 * 0.38 ≈ 17.1s）+ 加载 3.5s ≈ 20s
